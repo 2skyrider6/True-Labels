@@ -1,7 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-
-const client = new Anthropic();
 
 interface IngredientInput {
   name: string;
@@ -29,13 +26,12 @@ interface AnalysisResponse {
   top_concerns: string[];
 }
 
-// Mock web search function (using Tavily API)
+// Mock web search function (using Tavily API if available)
 async function searchIngredient(ingredient: string): Promise<string> {
   const tavilyApiKey = process.env.TAVILY_API_KEY;
 
   if (!tavilyApiKey) {
-    // Fallback: return empty results for demo
-    console.warn("TAVILY_API_KEY not set, using mock data");
+    // Fallback: return mock data
     return getMockSearchResults(ingredient);
   }
 
@@ -92,17 +88,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    if (!geminiApiKey) {
+      return NextResponse.json(
+        { error: "GEMINI_API_KEY not configured" },
+        { status: 500 }
+      );
+    }
+
     const results: AnalyzedIngredient[] = [];
     const avoidCount = { count: 0 };
     const cautionCount = { count: 0 };
 
-    // Analyze each ingredient
+    // Analyze each ingredient using Gemini
     for (const ingredient of ingredients) {
       const searchResults = await searchIngredient(ingredient.name);
 
-      const systemPrompt = `You are a food safety and nutrition expert. Analyze this ingredient based on scientific evidence and regulatory status.
-      
-Return a JSON object with these fields (STRICT JSON ONLY):
+      const analysisPrompt = `You are a food safety and nutrition expert. Analyze this ingredient based on scientific evidence and regulatory status.
+
+Ingredient: ${ingredient.name}
+Amount: ${ingredient.amount || "Not specified"}
+Search results: ${searchResults}
+User allergies: ${userAllergies?.join(", ") || "None specified"}
+
+Return a JSON object with these fields (STRICT JSON ONLY, no markdown):
 {
   "name": "ingredient name",
   "safety": "Safe" or "Caution" or "Avoid",
@@ -117,38 +127,67 @@ Classification guide:
 - Caution: Some concerns, limited evidence, may affect sensitive groups
 - Avoid: Banned in countries, strong evidence of harm, major allergen, known carcinogen
 
-Be evidence-based and cite real sources when possible.`;
-
-      const response = await client.messages.create({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 512,
-        messages: [
-          {
-            role: "user",
-            content: `Ingredient: ${ingredient.name}
-Amount: ${ingredient.amount || "Not specified"}
-Search results: ${searchResults}
-User allergies: ${userAllergies?.join(", ") || "None specified"}
-
-${systemPrompt}`,
-          },
-        ],
-      });
-
-      const textContent = response.content.find((block) => block.type === "text");
-      if (!textContent || textContent.type !== "text") {
-        continue;
-      }
+Be evidence-based and concise.`;
 
       try {
-        const analyzed = JSON.parse(textContent.text) as AnalyzedIngredient;
-        results.push(analyzed);
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: analysisPrompt,
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.7,
+                max_output_tokens: 512,
+              },
+            }),
+          }
+        );
 
-        if (analyzed.safety === "Avoid") avoidCount.count++;
-        if (analyzed.safety === "Caution") cautionCount.count++;
-      } catch {
-        // Skip malformed responses
-        console.error("Failed to parse ingredient analysis:", textContent.text);
+        if (!response.ok) {
+          console.error("Gemini analysis failed for:", ingredient.name);
+          continue;
+        }
+
+        const data = await response.json();
+        const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!textContent) {
+          console.error("No response from Gemini for:", ingredient.name);
+          continue;
+        }
+
+        try {
+          // Clean up markdown code blocks if present
+          const cleanedText = textContent
+            .replace(/```json\n?/g, "")
+            .replace(/```\n?/g, "")
+            .trim();
+          const analyzed = JSON.parse(cleanedText) as AnalyzedIngredient;
+          results.push(analyzed);
+
+          if (analyzed.safety === "Avoid") avoidCount.count++;
+          if (analyzed.safety === "Caution") cautionCount.count++;
+        } catch (parseError) {
+          console.error(
+            "Failed to parse Gemini response:",
+            textContent,
+            parseError
+          );
+        }
+      } catch (error) {
+        console.error("Error analyzing ingredient:", ingredient.name, error);
       }
     }
 
@@ -173,13 +212,13 @@ ${systemPrompt}`,
       .slice(0, 3)
       .map((r) => r.name);
 
-    const response: AnalysisResponse = {
+    const analysisResponse: AnalysisResponse = {
       results,
       product_risk_score: productRiskScore,
       top_concerns: topConcerns,
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(analysisResponse);
   } catch (error) {
     console.error("Error analyzing ingredients:", error);
     return NextResponse.json(

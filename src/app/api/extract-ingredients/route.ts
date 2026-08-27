@@ -1,7 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-
-const client = new Anthropic();
 
 interface ExtractedIngredient {
   name: string;
@@ -24,6 +21,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         { error: "Missing imageBase64 or imageMediaType" },
         { status: 400 }
+      );
+    }
+
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    if (!geminiApiKey) {
+      return NextResponse.json(
+        { error: "GEMINI_API_KEY not configured" },
+        { status: 500 }
       );
     }
 
@@ -51,39 +57,55 @@ Return format (STRICT JSON):
   "language_detected": "en"
 }`;
 
-    const response = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: [
+    // Call Google Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
             {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: imageMediaType as
-                  | "image/jpeg"
-                  | "image/png"
-                  | "image/gif"
-                  | "image/webp",
-                data: imageBase64,
-              },
-            },
-            {
-              type: "text",
-              text: systemPrompt,
+              parts: [
+                {
+                  text: systemPrompt,
+                },
+                {
+                  inline_data: {
+                    mime_type: imageMediaType,
+                    data: imageBase64,
+                  },
+                },
+              ],
             },
           ],
-        },
-      ],
-    });
+          generationConfig: {
+            temperature: 0.7,
+            max_output_tokens: 1024,
+          },
+        }),
+      }
+    );
 
-    // Extract the text content from the response
-    const textContent = response.content.find((block) => block.type === "text");
-    if (!textContent || textContent.type !== "text") {
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("Gemini API error:", error);
       return NextResponse.json(
-        { error: "No text response from Claude" },
+        { error: "Failed to call Gemini API" },
+        { status: 500 }
+      );
+    }
+
+    const data = await response.json();
+
+    // Extract text from Gemini response
+    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!textContent) {
+      return NextResponse.json(
+        { error: "No text response from Gemini" },
         { status: 500 }
       );
     }
@@ -91,10 +113,19 @@ Return format (STRICT JSON):
     // Parse the JSON response
     let parsedResponse: ExtractResponse;
     try {
-      parsedResponse = JSON.parse(textContent.text);
+      // Clean up markdown code blocks if present
+      const cleanedText = textContent
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+      parsedResponse = JSON.parse(cleanedText);
     } catch {
+      console.error("Failed to parse Gemini response:", textContent);
       return NextResponse.json(
-        { error: "Failed to parse Claude response as JSON", raw: textContent.text },
+        {
+          error: "Failed to parse Gemini response as JSON",
+          raw: textContent,
+        },
         { status: 500 }
       );
     }
