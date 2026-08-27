@@ -33,17 +33,17 @@ export function ScanHistory({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {scans.map((scan) => (
         <button
           key={scan.id}
           onClick={() => onSelectScan(scan)}
-          className="w-full text-left p-4 border border-gray-200 rounded-lg bg-white hover:border-gray-300 hover:shadow-sm transition-all"
+          className="w-full text-left p-5 border border-amber-100 rounded-xl bg-white hover:border-amber-300 hover:shadow-md transition-all"
         >
-          <div className="flex gap-4 items-start">
+          <div className="flex gap-5 items-start">
             {/* Thumbnail */}
             {scan.imageUrl && (
-              <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+              <div className="flex-shrink-0 w-20 h-20 bg-amber-100 rounded-xl overflow-hidden border border-amber-200 shadow-sm">
                 <img
                   src={scan.imageUrl}
                   alt="Scan"
@@ -54,9 +54,9 @@ export function ScanHistory({
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm line-clamp-2">
+                  <p className="font-bold text-gray-900 text-sm line-clamp-2">
                     {scan.ingredients
                       .slice(0, 3)
                       .map((i) => i.name)
@@ -65,12 +65,12 @@ export function ScanHistory({
                       ? `, +${scan.ingredients.length - 3} more`
                       : ""}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-1.5 font-medium">
                     {formatAnalysisDate(scan.timestamp)}
                   </p>
                 </div>
                 <span
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${riskColors[scan.analysis.product_risk_score]}`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0 ${riskColors[scan.analysis.product_risk_score]}`}
                 >
                   {scan.analysis.product_risk_score}
                 </span>
@@ -78,17 +78,17 @@ export function ScanHistory({
 
               {/* Top Concerns Preview */}
               {scan.analysis.top_concerns.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {scan.analysis.top_concerns.slice(0, 2).map((concern) => (
                     <span
                       key={concern}
-                      className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded-md border border-red-200"
+                      className="text-xs bg-rose-100 text-rose-800 px-2.5 py-1 rounded-lg border border-rose-200 font-medium"
                     >
                       {concern}
                     </span>
                   ))}
                   {scan.analysis.top_concerns.length > 2 && (
-                    <span className="text-xs text-gray-500 px-2 py-1">
+                    <span className="text-xs text-gray-600 px-2.5 py-1 font-medium">
                       +{scan.analysis.top_concerns.length - 2} more
                     </span>
                   )}
@@ -103,7 +103,7 @@ export function ScanHistory({
                   e.stopPropagation();
                   onDeleteScan(scan.id);
                 }}
-                className="text-gray-400 hover:text-red-600 flex-shrink-0 transition-colors"
+                className="text-gray-400 hover:text-rose-600 flex-shrink-0 transition-colors font-bold"
               >
                 ✕
               </button>

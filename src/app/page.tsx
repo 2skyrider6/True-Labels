@@ -109,29 +109,29 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="bg-white border-b border-amber-100 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center text-white font-bold">
-              FS
+            <div className="w-11 h-11 bg-gradient-to-br from-amber-600 to-amber-700 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+              TL
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">FoodSafe</h1>
-              <p className="text-xs text-gray-500">Food Safety Scanner</p>
+              <h1 className="text-xl font-bold text-gray-900 tracking-tight">True Labels</h1>
+              <p className="text-xs text-amber-700 font-medium">Transparent Food Analysis</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {view !== "history" && (
               <button
                 onClick={() => setView("history")}
-                className="px-4 py-2 text-gray-700 text-sm font-medium hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-700 text-sm font-medium hover:bg-amber-50 rounded-lg transition-colors"
               >
                 History
               </button>
             )}
             <button
               onClick={() => setProfileOpen(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               Profile
             </button>
@@ -140,15 +140,15 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="max-w-6xl mx-auto px-6 py-16">
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
-            <p className="font-semibold text-sm">Error</p>
+          <div className="mb-8 p-5 bg-rose-50 border border-rose-200 text-rose-900 rounded-xl">
+            <p className="font-semibold text-sm">Alert</p>
             <p className="text-sm mt-1">{error}</p>
             <button
               onClick={() => setError(null)}
-              className="mt-3 text-xs font-medium text-red-700 hover:text-red-900 underline"
+              className="mt-3 text-xs font-medium text-rose-700 hover:text-rose-900"
             >
               Dismiss
             </button>
@@ -158,12 +158,12 @@ export default function Home() {
         {/* Scanner View */}
         {view === "scanner" && (
           <div>
-            <div className="mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            <div className="mb-16">
+              <h2 className="text-5xl font-bold text-gray-900 mb-4 tracking-tight">
                 Scan Food Labels
               </h2>
-              <p className="text-gray-600 max-w-md">
-                Upload a photo of an ingredient list to analyze and identify potential allergens and concerns.
+              <p className="text-lg text-gray-600 max-w-2xl leading-relaxed">
+                Upload a photo of any food label's ingredient list. True Labels uses advanced AI to analyze ingredients, identify allergens, and provide transparent food safety insights.
               </p>
             </div>
             <CameraScanner
@@ -182,9 +182,9 @@ export default function Home() {
                 setCurrentScan(null);
                 setAnalysisResults(null);
               }}
-              className="mb-6 text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-2 transition-colors"
+              className="mb-8 text-amber-700 hover:text-amber-900 text-sm font-semibold flex items-center gap-2 transition-colors"
             >
-              <span>←</span> Back
+              <span>←</span> Back to Scanner
             </button>
             <ResultsDisplay
               ingredients={analysisResults.results}
@@ -199,13 +199,13 @@ export default function Home() {
         {/* History View */}
         {view === "history" && (
           <div>
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold text-gray-900">Scan History</h2>
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-4xl font-bold text-gray-900 tracking-tight">Your Scan History</h2>
               <button
                 onClick={() => setView("scanner")}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-colors"
               >
-                New Scan
+                + New Scan
               </button>
             </div>
             <ScanHistory
@@ -223,13 +223,13 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 bg-gray-50 mt-16">
-        <div className="max-w-4xl mx-auto px-6 py-8 text-center">
-          <p className="text-sm text-gray-600">
-            FoodSafe Scanner — Transparent food safety analysis
+      <footer className="border-t border-amber-100 bg-gradient-to-b from-white to-amber-50 mt-20">
+        <div className="max-w-6xl mx-auto px-6 py-12 text-center">
+          <p className="text-sm font-semibold text-gray-900 mb-1">
+            True Labels — Transparency in Every Bite
           </p>
-          <p className="text-xs text-gray-500 mt-2">
-            This tool is informational only. Always consult healthcare professionals for dietary advice.
+          <p className="text-xs text-gray-600 max-w-2xl mx-auto">
+            Our mission is to empower consumers with transparent, accurate food information. This analysis is educational and not a substitute for professional medical advice.
           </p>
         </div>
       </footer>

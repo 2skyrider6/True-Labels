@@ -65,32 +65,32 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
-      <div className="w-full bg-white rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="w-full bg-white rounded-t-3xl p-8 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">My Profile</h2>
+          <h2 className="text-3xl font-bold text-gray-900">My Profile</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl transition-colors"
+            className="text-gray-400 hover:text-gray-600 text-2xl transition-colors font-bold"
           >
             ✕
           </button>
         </div>
 
         {/* Allergies Section */}
-        <div className="mb-10">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Allergies</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Select all allergies that apply to you. We'll highlight these ingredients in scans.
+        <div className="mb-12">
+          <h3 className="text-base font-bold text-gray-900 mb-1">Allergies</h3>
+          <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+            Select all allergies that apply to you. True Labels will flag these ingredients and alert you during scans.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {COMMON_ALLERGIES.map((allergy) => (
               <button
                 key={allergy}
                 onClick={() => toggleAllergy(allergy)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   localAllergies.includes(allergy)
-                    ? "bg-purple-600 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                    ? "bg-purple-600 text-white shadow-md hover:shadow-lg hover:bg-purple-700"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-200 hover:border-gray-300"
                 }`}
               >
                 {allergy}
@@ -100,20 +100,20 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
         </div>
 
         {/* Dietary Restrictions Section */}
-        <div className="mb-10">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Dietary Restrictions</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Select your dietary preferences and restrictions.
+        <div className="mb-12">
+          <h3 className="text-base font-bold text-gray-900 mb-1">Dietary Preferences</h3>
+          <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+            Select your dietary preferences and lifestyle choices.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {COMMON_RESTRICTIONS.map((restriction) => (
               <button
                 key={restriction}
                 onClick={() => toggleRestriction(restriction)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   localRestrictions.includes(restriction)
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                    ? "bg-amber-600 text-white shadow-md hover:shadow-lg hover:bg-amber-700"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-200 hover:border-gray-300"
                 }`}
               >
                 {restriction}
@@ -123,16 +123,16 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 sticky bottom-6 pt-6 border-t border-gray-200 bg-white">
+        <div className="flex gap-4 sticky bottom-8 pt-8 border-t border-amber-100 bg-white">
           <button
             onClick={onClose}
-            className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium rounded-lg transition-colors text-sm"
+            className="flex-1 py-3.5 px-6 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-xl transition-colors text-sm"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors text-sm"
+            className="flex-1 py-3.5 px-6 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg text-sm"
           >
             Save Profile
           </button>

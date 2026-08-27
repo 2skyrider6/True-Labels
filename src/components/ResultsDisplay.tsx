@@ -37,39 +37,39 @@ export function ResultsDisplay({
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-8">
       {/* Disclaimer */}
-      <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-gray-700">
-        <p className="font-semibold text-amber-900 mb-1">Disclaimer</p>
-        <p className="text-amber-900 text-sm">
-          FoodSafe Scanner is for informational purposes only. It is not a substitute for professional medical advice. Always consult healthcare providers for dietary concerns or allergies.
+      <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl text-sm">
+        <p className="font-bold text-gray-900 mb-2">Our Commitment to Transparency</p>
+        <p className="text-gray-700 leading-relaxed">
+          True Labels provides educational analysis based on ingredient research. This is not medical advice. Please consult healthcare professionals for personal dietary decisions or medical concerns.
         </p>
       </div>
 
       {/* Overall Risk Score */}
-      <div className={`p-6 rounded-xl border ${riskColors[productRiskScore]}`}>
-        <p className="text-xs font-medium opacity-75 mb-1">PRODUCT RISK LEVEL</p>
-        <p className="text-4xl font-bold mb-2">{productRiskScore}</p>
-        <p className="text-sm text-opacity-90">
+      <div className={`p-8 rounded-2xl border-2 shadow-lg ${riskColors[productRiskScore]}`}>
+        <p className="text-xs font-bold opacity-75 mb-2 uppercase tracking-widest">Product Safety Assessment</p>
+        <p className="text-5xl font-bold mb-3">{productRiskScore}</p>
+        <p className="text-base leading-relaxed">
           {productRiskScore === "Low"
-            ? "No significant concerns detected in this product"
+            ? "This product contains no identified concerns based on common ingredient research."
             : productRiskScore === "Medium"
-              ? "Some ingredients warrant caution based on your profile"
-              : "Contains ingredients to avoid or be concerned about"}
+              ? "This product contains some ingredients that may warrant caution for certain individuals."
+              : "This product contains ingredients that warrant careful consideration or avoidance."}
         </p>
       </div>
 
       {/* Top Concerns */}
       {topConcerns.length > 0 && (
-        <div className="p-5 bg-red-50 rounded-xl border border-red-200">
-          <p className="font-semibold text-red-900 mb-3 text-sm">
-            Top {Math.min(3, topConcerns.length)} Concerns
+        <div className="p-6 bg-rose-50 rounded-2xl border border-rose-200">
+          <p className="font-bold text-rose-900 mb-4 text-base">
+            ⚠ Key Concerns ({topConcerns.length})
           </p>
           <ul className="space-y-2">
             {topConcerns.map((concern) => (
-              <li key={concern} className="flex gap-3 text-red-900 text-sm">
-                <span className="text-red-600 font-bold flex-shrink-0">•</span>
-                <span>{concern}</span>
+              <li key={concern} className="flex gap-3 text-rose-900 text-sm">
+                <span className="text-rose-600 font-bold flex-shrink-0">▸</span>
+                <span className="leading-relaxed">{concern}</span>
               </li>
             ))}
           </ul>
@@ -78,48 +78,48 @@ export function ResultsDisplay({
 
       {/* Ingredient List */}
       <div>
-        <h3 className="font-semibold text-gray-900 mb-4 text-sm">INGREDIENT ANALYSIS</h3>
-        <div className="space-y-3">
+        <h3 className="font-bold text-gray-900 mb-5 text-lg">Ingredient Breakdown</h3>
+        <div className="space-y-4">
           {ingredients.map((ingredient, idx) => (
             <div
               key={idx}
-              className="p-4 border border-gray-200 rounded-lg bg-white hover:border-gray-300 hover:shadow-sm transition"
+              className="p-5 border border-amber-100 rounded-xl bg-white hover:shadow-md transition-all"
             >
               {/* Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 pr-3">
-                  <p className="font-semibold text-gray-900 text-sm">
+                  <p className="font-bold text-gray-900 text-base">
                     {ingredient.name}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${safetyBadgeColors[ingredient.safety]}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold border ${safetyBadgeColors[ingredient.safety]}`}
                   >
                     {safetyIcons[ingredient.safety]} {ingredient.safety}
                   </span>
                   {ingredient.allergen && (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-300">
-                      Allergen
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700 border border-purple-300">
+                      ⚠ Allergen
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Reasoning */}
-              <p className="text-sm text-gray-700 mb-3">{ingredient.reasoning}</p>
+              <p className="text-sm text-gray-700 mb-4 leading-relaxed">{ingredient.reasoning}</p>
 
               {/* Concerns */}
               {ingredient.concerns && ingredient.concerns.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-xs font-semibold text-gray-600 mb-2">
-                    Specific Concerns
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                    Considerations
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {ingredient.concerns.map((concern) => (
                       <span
                         key={concern}
-                        className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md border border-gray-200"
+                        className="text-xs bg-amber-100 text-amber-900 px-3 py-2 rounded-lg border border-amber-200 font-medium"
                       >
                         {concern}
                       </span>
@@ -130,20 +130,20 @@ export function ResultsDisplay({
 
               {/* Sources */}
               {ingredient.sources && ingredient.sources.length > 0 && (
-                <div className="pt-3 border-t border-gray-100">
-                  <p className="text-xs font-semibold text-gray-600 mb-2">
-                    Sources
+                <div className="pt-4 border-t border-amber-100">
+                  <p className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wide">
+                    Research Sources
                   </p>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {ingredient.sources.map((source, sIdx) => (
                       <a
                         key={sIdx}
                         href={source.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-emerald-600 hover:text-emerald-700 hover:underline block"
+                        className="text-xs text-amber-700 hover:text-amber-900 hover:underline block font-medium"
                       >
-                        {source.title}
+                        ↗ {source.title}
                       </a>
                     ))}
                   </div>
@@ -155,38 +155,38 @@ export function ResultsDisplay({
       </div>
 
       {/* Safety Summary */}
-      <div className="p-5 bg-gray-50 rounded-xl border border-gray-200">
-        <p className="font-semibold text-gray-900 mb-3 text-sm">SUMMARY</p>
-        <ul className="space-y-2">
-          <li className="flex items-center gap-3 text-gray-700 text-sm">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span><strong>Safe:</strong> {ingredients.filter((i) => i.safety === "Safe").length} ingredients</span>
+      <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200">
+        <p className="font-bold text-gray-900 mb-4 text-base">Analysis Summary</p>
+        <ul className="space-y-3">
+          <li className="flex items-center gap-4 text-gray-700 text-sm">
+            <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+            <span className="font-medium">Safe: <span className="font-bold text-gray-900">{ingredients.filter((i) => i.safety === "Safe").length}</span> ingredients</span>
           </li>
-          <li className="flex items-center gap-3 text-gray-700 text-sm">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-            <span><strong>Caution:</strong> {ingredients.filter((i) => i.safety === "Caution").length} ingredients</span>
+          <li className="flex items-center gap-4 text-gray-700 text-sm">
+            <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
+            <span className="font-medium">Caution: <span className="font-bold text-gray-900">{ingredients.filter((i) => i.safety === "Caution").length}</span> ingredients</span>
           </li>
-          <li className="flex items-center gap-3 text-gray-700 text-sm">
-            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-            <span><strong>Avoid:</strong> {ingredients.filter((i) => i.safety === "Avoid").length} ingredients</span>
+          <li className="flex items-center gap-4 text-gray-700 text-sm">
+            <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+            <span className="font-medium">Avoid: <span className="font-bold text-gray-900">{ingredients.filter((i) => i.safety === "Avoid").length}</span> ingredients</span>
           </li>
         </ul>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-4 pt-4">
         {onSave && (
           <button
             onClick={onSave}
-            className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors text-sm"
+            className="flex-1 py-4 px-6 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg text-sm"
           >
-            Save Scan
+            Save Analysis
           </button>
         )}
         {onShare && (
           <button
             onClick={onShare}
-            className="flex-1 py-3 px-4 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors text-sm"
+            className="flex-1 py-4 px-6 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg text-sm"
           >
             Share Report
           </button>

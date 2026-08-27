@@ -24,10 +24,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#059669" />
+        <meta name="theme-color" content="#b45309" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-        <meta name="apple-mobile-web-app-title" content="FoodSafe" />
+        <meta name="apple-mobile-web-app-title" content="True Labels" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" type="image/png" href="/favicon.png" />
       </head>
