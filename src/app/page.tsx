@@ -107,43 +107,48 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-blue-600">🛡️ FoodSafe</h1>
-            <p className="text-xs text-gray-500">Scanner</p>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center text-white font-bold">
+              FS
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">FoodSafe</h1>
+              <p className="text-xs text-gray-500">Food Safety Scanner</p>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             {view !== "history" && (
               <button
                 onClick={() => setView("history")}
-                className="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                className="px-4 py-2 text-gray-700 text-sm font-medium hover:bg-gray-100 rounded-lg transition-colors"
               >
-                📋 History
+                History
               </button>
             )}
             <button
               onClick={() => setProfileOpen(true)}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              👤 Profile
+              Profile
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-6 py-12">
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-            <p className="font-semibold">❌ Error</p>
-            <p>{error}</p>
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
+            <p className="font-semibold text-sm">Error</p>
+            <p className="text-sm mt-1">{error}</p>
             <button
               onClick={() => setError(null)}
-              className="mt-2 text-sm underline hover:no-underline"
+              className="mt-3 text-xs font-medium text-red-700 hover:text-red-900 underline"
             >
               Dismiss
             </button>
@@ -153,13 +158,12 @@ export default function Home() {
         {/* Scanner View */}
         {view === "scanner" && (
           <div>
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Scan Your Food Label
+            <div className="mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                Scan Food Labels
               </h2>
-              <p className="text-gray-600">
-                Upload a clear photo of the ingredient list to analyze what's
-                in your food.
+              <p className="text-gray-600 max-w-md">
+                Upload a photo of an ingredient list to analyze and identify potential allergens and concerns.
               </p>
             </div>
             <CameraScanner
@@ -178,9 +182,9 @@ export default function Home() {
                 setCurrentScan(null);
                 setAnalysisResults(null);
               }}
-              className="mb-4 text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1"
+              className="mb-6 text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-2 transition-colors"
             >
-              ← Back to Scanner
+              <span>←</span> Back
             </button>
             <ResultsDisplay
               ingredients={analysisResults.results}
@@ -195,13 +199,13 @@ export default function Home() {
         {/* History View */}
         {view === "history" && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Scan History</h2>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold text-gray-900">Scan History</h2>
               <button
                 onClick={() => setView("scanner")}
-                className="text-blue-600 hover:text-blue-800 font-semibold"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                + New Scan
+                New Scan
               </button>
             </div>
             <ScanHistory
@@ -219,14 +223,13 @@ export default function Home() {
       />
 
       {/* Footer */}
-      <footer className="border-t bg-gray-50 mt-12">
-        <div className="max-w-2xl mx-auto px-4 py-6 text-center text-sm text-gray-600">
-          <p>
-            🔬 FoodSafe Scanner - Making food safety transparent and
-            accessible
+      <footer className="border-t border-gray-200 bg-gray-50 mt-16">
+        <div className="max-w-4xl mx-auto px-6 py-8 text-center">
+          <p className="text-sm text-gray-600">
+            FoodSafe Scanner — Transparent food safety analysis
           </p>
-          <p className="mt-2 text-xs">
-            Always consult with healthcare professionals for medical advice.
+          <p className="text-xs text-gray-500 mt-2">
+            This tool is informational only. Always consult healthcare professionals for dietary advice.
           </p>
         </div>
       </footer>

@@ -98,10 +98,10 @@ export function CameraScanner({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-2xl">
       {/* Preview Section */}
       {preview && (
-        <div className="mb-4 relative w-full bg-gray-900 rounded-lg overflow-hidden">
+        <div className="mb-6 relative w-full bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
           <img
             src={preview}
             alt="Selected image"
@@ -113,7 +113,7 @@ export function CameraScanner({
               setSelectedFile(null);
               if (fileInputRef.current) fileInputRef.current.value = "";
             }}
-            className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-8 h-8 flex items-center justify-center"
+            className="absolute top-3 right-3 bg-gray-900 bg-opacity-75 hover:bg-opacity-90 text-white rounded-full w-8 h-8 flex items-center justify-center transition-all"
           >
             ✕
           </button>
@@ -122,13 +122,13 @@ export function CameraScanner({
 
       {/* Error Message */}
       {extractError && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {extractError}
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
+          <p className="text-sm font-medium">{extractError}</p>
         </div>
       )}
 
       {/* Camera/Upload Input */}
-      <div className="mb-4">
+      <div className="space-y-3">
         <input
           ref={fileInputRef}
           type="file"
@@ -142,10 +142,10 @@ export function CameraScanner({
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading}
-          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+          className="w-full py-3 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
         >
           <svg
-            className="w-6 h-6"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -163,29 +163,41 @@ export function CameraScanner({
               d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          {isLoading ? "Processing..." : "Take Photo or Upload"}
+          {isLoading ? "Processing..." : "Upload Photo"}
         </button>
-      </div>
 
-      {/* Extract Button */}
-      {selectedFile && !isLoading && (
-        <button
-          onClick={handleExtract}
-          className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
-        >
-          Analyze Ingredients
-        </button>
-      )}
+        {/* Extract Button */}
+        {selectedFile && !isLoading && (
+          <button
+            onClick={handleExtract}
+            className="w-full py-3 px-6 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors"
+          >
+            Analyze Ingredients
+          </button>
+        )}
+      </div>
 
       {/* Instructions */}
       {!preview && (
-        <div className="p-4 bg-blue-50 rounded-lg text-sm text-gray-700">
-          <p className="font-semibold mb-2">📸 Tips for best results:</p>
-          <ul className="list-disc list-inside space-y-1">
-            <li>Take a clear, well-lit photo of the ingredient label</li>
-            <li>Make sure all text is readable and not blurry</li>
-            <li>Avoid glare and shadows</li>
-            <li>Include the complete ingredient list</li>
+        <div className="mt-8 p-5 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="font-semibold text-gray-900 mb-3 text-sm">Tips for best results</p>
+          <ul className="space-y-2">
+            <li className="flex gap-3 text-sm text-gray-700">
+              <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
+              <span>Take a clear, well-lit photo of the ingredient label</span>
+            </li>
+            <li className="flex gap-3 text-sm text-gray-700">
+              <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
+              <span>Ensure all text is readable and not blurry</span>
+            </li>
+            <li className="flex gap-3 text-sm text-gray-700">
+              <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
+              <span>Avoid glare and shadows on the label</span>
+            </li>
+            <li className="flex gap-3 text-sm text-gray-700">
+              <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
+              <span>Include the complete ingredient list in the frame</span>
+            </li>
           </ul>
         </div>
       )}

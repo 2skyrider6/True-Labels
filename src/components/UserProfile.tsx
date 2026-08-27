@@ -65,33 +65,32 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
-      <div className="w-full bg-white rounded-t-2xl p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">My Profile</h2>
+      <div className="w-full bg-white rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">My Profile</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-gray-400 hover:text-gray-600 text-2xl transition-colors"
           >
             ✕
           </button>
         </div>
 
         {/* Allergies Section */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4">🧬 Allergies</h3>
+        <div className="mb-10">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Allergies</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Select all allergies that apply to you. We'll highlight these
-            ingredients in scans.
+            Select all allergies that apply to you. We'll highlight these ingredients in scans.
           </p>
           <div className="flex flex-wrap gap-2">
             {COMMON_ALLERGIES.map((allergy) => (
               <button
                 key={allergy}
                 onClick={() => toggleAllergy(allergy)}
-                className={`px-4 py-2 rounded-full font-semibold transition ${
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   localAllergies.includes(allergy)
-                    ? "bg-purple-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    ? "bg-purple-600 text-white shadow-sm"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                 }`}
               >
                 {allergy}
@@ -101,8 +100,8 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
         </div>
 
         {/* Dietary Restrictions Section */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4">🥗 Dietary Restrictions</h3>
+        <div className="mb-10">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">Dietary Restrictions</h3>
           <p className="text-sm text-gray-600 mb-4">
             Select your dietary preferences and restrictions.
           </p>
@@ -111,10 +110,10 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
               <button
                 key={restriction}
                 onClick={() => toggleRestriction(restriction)}
-                className={`px-4 py-2 rounded-full font-semibold transition ${
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   localRestrictions.includes(restriction)
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                 }`}
               >
                 {restriction}
@@ -124,16 +123,16 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 sticky bottom-0 pt-4 border-t">
+        <div className="flex gap-3 sticky bottom-6 pt-6 border-t border-gray-200 bg-white">
           <button
             onClick={onClose}
-            className="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition"
+            className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium rounded-lg transition-colors text-sm"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+            className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors text-sm"
           >
             Save Profile
           </button>
