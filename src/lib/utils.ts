@@ -1,11 +1,15 @@
 export async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
+    reader.readAsArrayBuffer(file);
     reader.onload = () => {
-      const result = reader.result as string;
-      // Extract base64 data (remove data:image/jpeg;base64, prefix)
-      const base64 = result.split(",")[1];
+      const buffer = reader.result as ArrayBuffer;
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
       resolve(base64);
     };
     reader.onerror = reject;

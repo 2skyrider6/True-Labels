@@ -33,7 +33,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const systemPrompt = `You are an expert at reading food product ingredient labels. 
+    const systemPrompt = `You are an expert at reading food product ingredient labels.
 Your task is to extract ALL ingredients from a food label image and return them as a structured JSON list.
 
 IMPORTANT RULES:
@@ -45,8 +45,9 @@ IMPORTANT RULES:
 6. Detect the language of the label
 7. Be strict about accuracy - if unsure about a word, use your best judgment
 8. Include allergens and additives (colors, preservatives, etc.)
+9. If no ingredients are found, still return valid JSON with empty ingredients array
 
-Return format (STRICT JSON):
+Return format (STRICT JSON - no markdown, no extra text):
 {
   "ingredients": [
     {"name": "Wheat Starch", "amount": "30", "unit": "g"},
@@ -55,7 +56,9 @@ Return format (STRICT JSON):
   ],
   "confidence": 0.95,
   "language_detected": "en"
-}`;
+}
+
+RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
 
     // Call Google Gemini API
     const response = await fetch(
@@ -113,21 +116,42 @@ Return format (STRICT JSON):
     // Parse the JSON response
     let parsedResponse: ExtractResponse;
     try {
-      // Clean up markdown code blocks if present
-      const cleanedText = textContent
+      // Clean up markdown code blocks and extra whitespace
+      let cleanedText = textContent
         .replace(/```json\n?/g, "")
         .replace(/```\n?/g, "")
         .trim();
+      
+      // Handle potential trailing commas or other JSON issues
+      cleanedText = cleanedText
+        .replace(/,\s*}/g, "}")
+        .replace(/,\s*\]/g, "]");
+      
       parsedResponse = JSON.parse(cleanedText);
-    } catch {
-      console.error("Failed to parse Gemini response:", textContent);
-      return NextResponse.json(
-        {
-          error: "Failed to parse Gemini response as JSON",
-          raw: textContent,
-        },
-        { status: 500 }
-      );
+      
+      // Validate response structure
+      if (!parsedResponse.ingredients || !Array.isArray(parsedResponse.ingredients)) {
+        parsedResponse.ingredients = [];
+      }
+      if (!parsedResponse.confidence) {
+        parsedResponse.confidence = 0.5;
+      }
+      if (!parsedResponse.language_detected) {
+        parsedResponse.language_detected = "unknown";
+      }
+    } catch (parseError) {
+      console.error("Failed to parse Gemini response:", {
+        error: parseError,
+        textContent: textContent.substring(0, 500),
+      });
+      
+      // Return a fallback response instead of failing
+      return NextResponse.json({
+        ingredients: [],
+        confidence: 0,
+        language_detected: "unknown",
+        error: "Failed to extract ingredients from image. Please ensure the image clearly shows an ingredient label.",
+      });
     }
 
     return NextResponse.json(parsedResponse);

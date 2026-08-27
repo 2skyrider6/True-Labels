@@ -56,6 +56,10 @@ export function CameraScanner({
       const base64 = await fileToBase64(selectedFile);
       const mediaType = getMediaType(selectedFile);
 
+      if (!base64 || base64.length === 0) {
+        throw new Error("Failed to process image file");
+      }
+
       // Call extraction API
       const extractResponse = await fetch("/api/extract-ingredients", {
         method: "POST",
@@ -64,27 +68,31 @@ export function CameraScanner({
       });
 
       if (!extractResponse.ok) {
-        throw new Error("Failed to extract ingredients");
+        const errorData = await extractResponse.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || `Server error: ${extractResponse.status}`
+        );
       }
 
       const extractedData = await extractResponse.json();
 
-      if (extractedData.error) {
+      // Check if we got valid ingredients or an error message
+      if (extractedData.error && (!extractedData.ingredients || extractedData.ingredients.length === 0)) {
         throw new Error(extractedData.error);
       }
 
-      // Create partial scan object
+      // Even if error is present but we have ingredients, proceed
       const newScan: Partial<Scan> = {
         id: `scan_${Date.now()}`,
         timestamp: Date.now(),
         imageUrl: preview || "",
-        ingredients: extractedData.ingredients,
+        ingredients: extractedData.ingredients || [],
       };
 
       onScanComplete(newScan);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to process image";
+        error instanceof Error ? error.message : "Failed to process image. Please try again with a clearer photo of the ingredient label.";
       setExtractError(message);
     }
   };
