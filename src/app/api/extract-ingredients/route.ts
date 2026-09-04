@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 
 interface ExtractedIngredient {
   name: string;
@@ -25,106 +24,109 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      // Fallback to Gemini if Anthropic key is not available
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
       return NextResponse.json(
         {
           ingredients: [],
           confidence: 0,
           language_detected: "unknown",
-          error: "No AI API configured. Please set ANTHROPIC_API_KEY or GEMINI_API_KEY environment variable.",
+          error: "GEMINI_API_KEY not configured",
         }
       );
     }
 
-    const client = new Anthropic({ apiKey });
+    // Use Gemini 2.0 Flash to process the image directly
+    // The model CAN process images - we just need to use it correctly
+    console.log("Using Gemini 2.0 Flash with vision support...");
 
-    const systemPrompt = `You are an expert at reading food product ingredient labels.
-Your task is to extract ALL ingredients from a food label image and return them as a structured JSON list.
+    const systemPrompt = `You are an expert food safety analyst. Your task is to:
+1. Extract ALL ingredients from this food label image
+2. Return them as a JSON list with name, amount, and unit
 
-IMPORTANT RULES:
-1. Extract EVERY ingredient listed, even minor ones
-2. For each ingredient, try to capture: name, amount (if visible), unit (g, mg, ml, etc.)
-3. Handle common variations: E-numbers (E102), technical names, brand names
-4. If text is blurry or unclear, do your best to interpret it
-5. Return ONLY valid JSON, no markdown or extra text
-6. Detect the language of the label
-7. Be strict about accuracy - if unsure about a word, use your best judgment
-8. Include allergens and additives (colors, preservatives, etc.)
-9. If no ingredients are found, still return valid JSON with empty ingredients array
-
-Return format (STRICT JSON - no markdown, no extra text):
+Return ONLY this JSON format (no markdown, no extra text):
 {
   "ingredients": [
-    {"name": "Wheat Starch", "amount": "30", "unit": "g"},
-    {"name": "Soy Lecithin"},
-    {"name": "Yellow 5"}
+    {"name": "ingredient name", "amount": "value", "unit": "unit"},
+    {"name": "ingredient name"}
   ],
-  "confidence": 0.95,
+  "confidence": 0.85,
   "language_detected": "en"
-}
+}`;
 
-RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
-
-    console.log("Using Claude API for vision-based ingredient extraction");
-
-    const response = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [
-        {
-          role: "user",
-          content: [
+    // Try calling Gemini 2.0 Flash with vision
+    let response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          system: systemPrompt,
+          contents: [
             {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: imageMediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
-                data: imageBase64,
-              },
-            },
-            {
-              type: "text",
-              text: "Please extract all ingredients from this food label image and return as JSON.",
+              parts: [
+                {
+                  inline_data: {
+                    mime_type: imageMediaType,
+                    data: imageBase64,
+                  },
+                },
+                {
+                  text: "Extract all ingredients from this food label image.",
+                },
+              ],
             },
           ],
-        },
-      ],
-    });
+          generationConfig: {
+            temperature: 0.1,
+            max_output_tokens: 1024,
+            top_p: 1,
+          },
+        }),
+      }
+    );
 
-    const textContent = response.content[0];
-    if (textContent.type !== "text") {
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("Gemini error:", error.error?.message);
+      
+      // If vision fails, return a message asking user to use the free tier properly
       return NextResponse.json({
         ingredients: [],
         confidence: 0,
         language_detected: "unknown",
-        error: "Invalid response from Claude API",
+        error: "Vision processing not available with current API key. Please ensure your Gemini API key has Vision API enabled.",
       });
     }
 
-    const textResponse = textContent.text;
+    const data = await response.json();
+    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!textContent) {
+      return NextResponse.json({
+        ingredients: [],
+        confidence: 0,
+        language_detected: "unknown",
+        error: "No response from Gemini",
+      });
+    }
 
     // Parse the JSON response
     let parsedResponse: ExtractResponse;
     try {
-      // Clean up markdown code blocks and extra whitespace
-      let cleanedText = textResponse
+      let cleanedText = textContent
         .replace(/```json\n?/g, "")
         .replace(/```\n?/g, "")
         .trim();
 
-      // Handle potential trailing commas or other JSON issues
       cleanedText = cleanedText
         .replace(/,\s*}/g, "}")
         .replace(/,\s*\]/g, "]");
 
-      // Fix incomplete JSON by adding missing closing brackets
       let attempts = 0;
-      const maxAttempts = 5;
-
-      while (attempts < maxAttempts) {
+      while (attempts < 5) {
         try {
           parsedResponse = JSON.parse(cleanedText);
           break;
@@ -150,43 +152,41 @@ RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
         }
       }
 
-      // Validate response structure
       if (!parsedResponse.ingredients || !Array.isArray(parsedResponse.ingredients)) {
         parsedResponse.ingredients = [];
       }
       if (!parsedResponse.confidence) {
-        parsedResponse.confidence = 0.8;
+        parsedResponse.confidence = 0.7;
       }
       if (!parsedResponse.language_detected) {
         parsedResponse.language_detected = "en";
       }
-    } catch (parseError) {
-      console.error("Failed to parse Claude response:", parseError);
 
-      // Try to extract ingredients manually as fallback
-      const ingredientMatches = textResponse.match(/"name":\s*"([^"]+)"/g) || [];
+      console.log(`✓ Extracted ${parsedResponse.ingredients.length} ingredients`);
+    } catch (parseError) {
+      console.error("Parse error:", parseError);
+      
+      // Try manual extraction
+      const ingredientMatches = textContent.match(/"name":\s*"([^"]+)"/g) || [];
       const ingredients = ingredientMatches.map((match) => ({
         name: match.replace(/"name":\s*"/, "").replace(/"$/, ""),
       }));
 
       return NextResponse.json({
         ingredients: ingredients.length > 0 ? ingredients : [],
-        confidence: ingredients.length > 0 ? 0.5 : 0,
-        language_detected: "unknown",
+        confidence: 0.5,
+        language_detected: "en",
       });
     }
 
-    console.log(`✓ Successfully extracted ${parsedResponse.ingredients.length} ingredients`);
     return NextResponse.json(parsedResponse);
   } catch (error) {
-    console.error("Error extracting ingredients:", error);
-    return NextResponse.json(
-      {
-        ingredients: [],
-        confidence: 0,
-        language_detected: "unknown",
-        error: error instanceof Error ? error.message : "Unknown error",
-      }
-    );
+    console.error("Error:", error);
+    return NextResponse.json({
+      ingredients: [],
+      confidence: 0,
+      language_detected: "unknown",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 }
