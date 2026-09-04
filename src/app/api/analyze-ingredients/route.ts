@@ -26,12 +26,11 @@ interface AnalysisResponse {
   top_concerns: string[];
 }
 
-// Mock web search function (using Tavily API if available)
+// Mock web search function
 async function searchIngredient(ingredient: string): Promise<string> {
   const tavilyApiKey = process.env.TAVILY_API_KEY;
 
   if (!tavilyApiKey) {
-    // Fallback: return mock data
     return getMockSearchResults(ingredient);
   }
 
@@ -62,7 +61,6 @@ async function searchIngredient(ingredient: string): Promise<string> {
 }
 
 function getMockSearchResults(ingredient: string): string {
-  // Mock data for common ingredients
   const mockDatabase: Record<string, string> = {
     "wheat starch":
       '[{"title":"Wheat Starch Safety","snippet":"Generally recognized as safe (GRAS) by FDA. Common thickening agent.","url":"https://fda.gov"}]',
@@ -101,6 +99,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const avoidCount = { count: 0 };
     const cautionCount = { count: 0 };
 
+    // Models to try
+    const models = [
+      "gemini-3.6-flash",
+      "gemini-2.0-flash",
+      "gemini-2.0-flash-exp",
+      "gemini-1.5-pro",
+    ];
+
     // Analyze each ingredient using Gemini
     for (const ingredient of ingredients) {
       const searchResults = await searchIngredient(ingredient.name);
@@ -129,86 +135,71 @@ Classification guide:
 
 Be evidence-based and concise.`;
 
-      try {
-        // Try models with fallback
-        const models = ["gemini-3.6-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
-        let modelResponse = null;
-        let modelError = null;
+      let analyzed = null;
 
-        for (const modelName of models) {
-          try {
-            modelResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  contents: [
-                    {
-                      parts: [
-                        {
-                          text: analysisPrompt,
-                        },
-                      ],
-                    },
-                  ],
-                  generationConfig: {
-                    temperature: 0.7,
-                    max_output_tokens: 512,
-                  },
-                }),
-              }
-            );
-
-            if (modelResponse.ok) {
-              console.log(`Successfully using model: ${modelName} for analysis`);
-              break;
-            } else {
-              const err = await modelResponse.json();
-              modelError = err;
-              console.log(`Model ${modelName} failed for analysis, trying next...`);
-            }
-          } catch (err) {
-            console.error(`Error trying model ${modelName}:`, err);
-            modelError = err;
-          }
-        }
-
-        if (!modelResponse?.ok) {
-          console.error("All models failed for analysis. Last error:", modelError);
-          continue;
-        }
-
-        const data = await modelResponse.json();
-        const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!textContent) {
-          console.error("No response from Gemini for:", ingredient.name);
-          continue;
-        }
-
+      // Try models with fallback
+      for (const modelName of models) {
         try {
-          // Clean up markdown code blocks if present
-          const cleanedText = textContent
-            .replace(/```json\n?/g, "")
-            .replace(/```\n?/g, "")
-            .trim();
-          const analyzed = JSON.parse(cleanedText) as AnalyzedIngredient;
-          results.push(analyzed);
-
-          if (analyzed.safety === "Avoid") avoidCount.count++;
-          if (analyzed.safety === "Caution") cautionCount.count++;
-        } catch (parseError) {
-          console.error(
-            "Failed to parse Gemini response:",
-            textContent,
-            parseError
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: analysisPrompt,
+                      },
+                    ],
+                  },
+                ],
+                generationConfig: {
+                  temperature: 0.7,
+                  max_output_tokens: 512,
+                },
+              }),
+            }
           );
+
+          if (!response.ok) {
+            console.log(`Model ${modelName} failed for analysis, trying next...`);
+            continue;
+          }
+
+          const data = await response.json();
+          const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          if (!textContent) {
+            console.log(`No response from ${modelName}, trying next...`);
+            continue;
+          }
+
+          try {
+            const cleanedText = textContent
+              .replace(/```json\n?/g, "")
+              .replace(/```\n?/g, "")
+              .trim();
+            analyzed = JSON.parse(cleanedText) as AnalyzedIngredient;
+            console.log(`✓ Successfully analyzed "${ingredient.name}" with ${modelName}`);
+            break;
+          } catch (parseError) {
+            console.error(`Failed to parse response from ${modelName}:`, parseError);
+            continue;
+          }
+        } catch (error) {
+          console.error(`Error analyzing with ${modelName}:`, error);
+          continue;
         }
-      } catch (error) {
-        console.error("Error analyzing ingredient:", ingredient.name, error);
+      }
+
+      if (analyzed) {
+        results.push(analyzed);
+        if (analyzed.safety === "Avoid") avoidCount.count++;
+        if (analyzed.safety === "Caution") cautionCount.count++;
       }
     }
 

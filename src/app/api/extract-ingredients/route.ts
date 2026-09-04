@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
 
 interface ExtractedIngredient {
   name: string;
@@ -24,14 +25,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-
-    if (!geminiApiKey) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      // Fallback to Gemini if Anthropic key is not available
       return NextResponse.json(
-        { error: "GEMINI_API_KEY not configured" },
-        { status: 500 }
+        {
+          ingredients: [],
+          confidence: 0,
+          language_detected: "unknown",
+          error: "No AI API configured. Please set ANTHROPIC_API_KEY or GEMINI_API_KEY environment variable.",
+        }
       );
     }
+
+    const client = new Anthropic({ apiKey });
 
     const systemPrompt = `You are an expert at reading food product ingredient labels.
 Your task is to extract ALL ingredients from a food label image and return them as a structured JSON list.
@@ -60,113 +67,76 @@ Return format (STRICT JSON - no markdown, no extra text):
 
 RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
 
-    // Call Google Gemini API with fallback models
-    const models = ["gemini-3.6-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
-    let response = null;
-    let lastError = null;
+    console.log("Using Claude API for vision-based ingredient extraction");
 
-    for (const modelName of models) {
-      try {
-        response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: systemPrompt,
-                    },
-                    {
-                      inline_data: {
-                        mime_type: imageMediaType,
-                        data: imageBase64,
-                      },
-                    },
-                  ],
-                },
-              ],
-              generationConfig: {
-                temperature: 0.7,
-                max_output_tokens: 1024,
+    const response = await client.messages.create({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: imageMediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                data: imageBase64,
               },
-            }),
-          }
-        );
+            },
+            {
+              type: "text",
+              text: "Please extract all ingredients from this food label image and return as JSON.",
+            },
+          ],
+        },
+      ],
+    });
 
-        if (response.ok) {
-          console.log(`Successfully using model: ${modelName}`);
-          break;
-        } else {
-          const error = await response.json();
-          lastError = error;
-          console.log(`Model ${modelName} failed, trying next...`, error.error?.message);
-        }
-      } catch (err) {
-        console.error(`Error trying model ${modelName}:`, err);
-        lastError = err;
-      }
+    const textContent = response.content[0];
+    if (textContent.type !== "text") {
+      return NextResponse.json({
+        ingredients: [],
+        confidence: 0,
+        language_detected: "unknown",
+        error: "Invalid response from Claude API",
+      });
     }
 
-    if (!response?.ok) {
-      console.error("All Gemini models failed. Last error:", lastError);
-      return NextResponse.json(
-        { error: "Failed to call Gemini API. Please ensure your API key is valid and has vision capabilities enabled." },
-        { status: 500 }
-      );
-    }
-
-    const data = await response.json();
-
-    // Extract text from Gemini response
-    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!textContent) {
-      return NextResponse.json(
-        { error: "No text response from Gemini" },
-        { status: 500 }
-      );
-    }
+    const textResponse = textContent.text;
 
     // Parse the JSON response
     let parsedResponse: ExtractResponse;
     try {
       // Clean up markdown code blocks and extra whitespace
-      let cleanedText = textContent
+      let cleanedText = textResponse
         .replace(/```json\n?/g, "")
         .replace(/```\n?/g, "")
         .trim();
-      
+
       // Handle potential trailing commas or other JSON issues
       cleanedText = cleanedText
         .replace(/,\s*}/g, "}")
         .replace(/,\s*\]/g, "]");
 
-      // Fix incomplete JSON by finding the last complete object/array
-      // If JSON is incomplete, try to complete it
+      // Fix incomplete JSON by adding missing closing brackets
       let attempts = 0;
       const maxAttempts = 5;
-      
+
       while (attempts < maxAttempts) {
         try {
           parsedResponse = JSON.parse(cleanedText);
-          break; // Success
+          break;
         } catch (err) {
-          // If it ends with incomplete data, try closing it
           if (cleanedText.endsWith(",")) {
             cleanedText = cleanedText.slice(0, -1);
           } else if (!cleanedText.endsWith("}") && !cleanedText.endsWith("]")) {
-            // Try to complete the JSON by adding missing closing brackets
             const openBraces = (cleanedText.match(/{/g) || []).length;
             const closeBraces = (cleanedText.match(/}/g) || []).length;
             const openBrackets = (cleanedText.match(/\[/g) || []).length;
             const closeBrackets = (cleanedText.match(/\]/g) || []).length;
 
-            // Add missing closing brackets
             for (let i = 0; i < openBrackets - closeBrackets; i++) {
               cleanedText += "]";
             }
@@ -179,46 +149,44 @@ RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
           attempts++;
         }
       }
-      
+
       // Validate response structure
       if (!parsedResponse.ingredients || !Array.isArray(parsedResponse.ingredients)) {
         parsedResponse.ingredients = [];
       }
       if (!parsedResponse.confidence) {
-        parsedResponse.confidence = 0.5;
+        parsedResponse.confidence = 0.8;
       }
       if (!parsedResponse.language_detected) {
-        parsedResponse.language_detected = "unknown";
+        parsedResponse.language_detected = "en";
       }
     } catch (parseError) {
-      console.error("Failed to parse Gemini response:", {
-        error: parseError,
-        textContent: textContent.substring(0, 500),
-      });
-      
-      // Try to extract ingredients manually from the text as a last resort
-      const ingredientMatches = textContent.match(/"name":\s*"([^"]+)"/g) || [];
+      console.error("Failed to parse Claude response:", parseError);
+
+      // Try to extract ingredients manually as fallback
+      const ingredientMatches = textResponse.match(/"name":\s*"([^"]+)"/g) || [];
       const ingredients = ingredientMatches.map((match) => ({
         name: match.replace(/"name":\s*"/, "").replace(/"$/, ""),
       }));
 
-      // Return fallback response with any extracted ingredients
       return NextResponse.json({
         ingredients: ingredients.length > 0 ? ingredients : [],
-        confidence: ingredients.length > 0 ? 0.3 : 0,
+        confidence: ingredients.length > 0 ? 0.5 : 0,
         language_detected: "unknown",
-        error: ingredients.length > 0 
-          ? undefined 
-          : "Failed to extract ingredients from image. Please ensure the image clearly shows an ingredient label.",
       });
     }
 
+    console.log(`✓ Successfully extracted ${parsedResponse.ingredients.length} ingredients`);
     return NextResponse.json(parsedResponse);
   } catch (error) {
     console.error("Error extracting ingredients:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      {
+        ingredients: [],
+        confidence: 0,
+        language_detected: "unknown",
+        error: error instanceof Error ? error.message : "Unknown error",
+      }
     );
   }
 }

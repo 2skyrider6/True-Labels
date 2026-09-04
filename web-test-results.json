@@ -1,0 +1,27 @@
+﻿{
+    "imageSource":  "Web Images",
+    "timestamp":  "2026-09-04 17:59:15",
+    "summary":  {
+                    "successRate":  "0%",
+                    "failed":  4,
+                    "successful":  0,
+                    "total":  2,
+                    "partial":  6
+                },
+    "tests":  [
+                  {
+                      "status":  "FAILED",
+                      "error":  "Extraction API failed: The remote server returned an error: (500) Internal Server Error.",
+                      "name":  "Bread Package Label",
+                      "test":  1
+                  },
+                  {
+                      "confidence":  0.5,
+                      "name":  "Protein Bar",
+                      "error":  "No ingredients detected",
+                      "language":  "none",
+                      "test":  2,
+                      "status":  "PARTIAL"
+                  }
+              ]
+}

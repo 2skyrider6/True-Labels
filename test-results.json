@@ -1,0 +1,91 @@
+﻿{
+    "summary":  {
+                    "failed":  10,
+                    "successful":  0,
+                    "total":  10,
+                    "partial":  0
+                },
+    "timestamp":  "2026-09-04 17:36:14",
+    "tests":  [
+                  {
+                      "name":  "Test Image 1",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  1,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 2",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  2,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 3",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  3,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 4",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  4,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 5",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  5,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 6",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  6,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 7",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  7,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 8",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  8,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 9",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  9,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  },
+                  {
+                      "name":  "Test Image 10",
+                      "error":  "Extraction failed: The remote server returned an error: (500) Internal Server Error.",
+                      "analysis":  null,
+                      "test":  10,
+                      "status":  "FAILED",
+                      "extraction":  null
+                  }
+              ]
+}
