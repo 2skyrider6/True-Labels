@@ -1,4 +1,4 @@
-# 🚀 FoodSafe Scanner — 100% Free Deployment Guide
+can# 🚀 FoodSafe Scanner — 100% Free Deployment Guide
 
 Your app now uses **Google Gemini 2.0 Flash (completely free)** instead of Claude!
 

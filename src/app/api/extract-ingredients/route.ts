@@ -62,7 +62,7 @@ RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
 
     // Call Google Gemini API
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`,
       {
         method: "POST",
         headers: {
@@ -126,8 +126,40 @@ RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
       cleanedText = cleanedText
         .replace(/,\s*}/g, "}")
         .replace(/,\s*\]/g, "]");
+
+      // Fix incomplete JSON by finding the last complete object/array
+      // If JSON is incomplete, try to complete it
+      let attempts = 0;
+      const maxAttempts = 5;
       
-      parsedResponse = JSON.parse(cleanedText);
+      while (attempts < maxAttempts) {
+        try {
+          parsedResponse = JSON.parse(cleanedText);
+          break; // Success
+        } catch (err) {
+          // If it ends with incomplete data, try closing it
+          if (cleanedText.endsWith(",")) {
+            cleanedText = cleanedText.slice(0, -1);
+          } else if (!cleanedText.endsWith("}") && !cleanedText.endsWith("]")) {
+            // Try to complete the JSON by adding missing closing brackets
+            const openBraces = (cleanedText.match(/{/g) || []).length;
+            const closeBraces = (cleanedText.match(/}/g) || []).length;
+            const openBrackets = (cleanedText.match(/\[/g) || []).length;
+            const closeBrackets = (cleanedText.match(/\]/g) || []).length;
+
+            // Add missing closing brackets
+            for (let i = 0; i < openBrackets - closeBrackets; i++) {
+              cleanedText += "]";
+            }
+            for (let i = 0; i < openBraces - closeBraces; i++) {
+              cleanedText += "}";
+            }
+          } else {
+            throw err;
+          }
+          attempts++;
+        }
+      }
       
       // Validate response structure
       if (!parsedResponse.ingredients || !Array.isArray(parsedResponse.ingredients)) {
@@ -145,12 +177,20 @@ RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
         textContent: textContent.substring(0, 500),
       });
       
-      // Return a fallback response instead of failing
+      // Try to extract ingredients manually from the text as a last resort
+      const ingredientMatches = textContent.match(/"name":\s*"([^"]+)"/g) || [];
+      const ingredients = ingredientMatches.map((match) => ({
+        name: match.replace(/"name":\s*"/, "").replace(/"$/, ""),
+      }));
+
+      // Return fallback response with any extracted ingredients
       return NextResponse.json({
-        ingredients: [],
-        confidence: 0,
+        ingredients: ingredients.length > 0 ? ingredients : [],
+        confidence: ingredients.length > 0 ? 0.3 : 0,
         language_detected: "unknown",
-        error: "Failed to extract ingredients from image. Please ensure the image clearly shows an ingredient label.",
+        error: ingredients.length > 0 
+          ? undefined 
+          : "Failed to extract ingredients from image. Please ensure the image clearly shows an ingredient label.",
       });
     }
 
