@@ -130,37 +130,58 @@ Classification guide:
 Be evidence-based and concise.`;
 
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
+        // Try models with fallback
+        const models = ["gemini-3.6-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+        let modelResponse = null;
+        let modelError = null;
+
+        for (const modelName of models) {
+          try {
+            modelResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  contents: [
                     {
-                      text: analysisPrompt,
+                      parts: [
+                        {
+                          text: analysisPrompt,
+                        },
+                      ],
                     },
                   ],
-                },
-              ],
-              generationConfig: {
-                temperature: 0.7,
-                max_output_tokens: 512,
-              },
-            }),
-          }
-        );
+                  generationConfig: {
+                    temperature: 0.7,
+                    max_output_tokens: 512,
+                  },
+                }),
+              }
+            );
 
-        if (!response.ok) {
-          console.error("Gemini analysis failed for:", ingredient.name);
+            if (modelResponse.ok) {
+              console.log(`Successfully using model: ${modelName} for analysis`);
+              break;
+            } else {
+              const err = await modelResponse.json();
+              modelError = err;
+              console.log(`Model ${modelName} failed for analysis, trying next...`);
+            }
+          } catch (err) {
+            console.error(`Error trying model ${modelName}:`, err);
+            modelError = err;
+          }
+        }
+
+        if (!modelResponse?.ok) {
+          console.error("All models failed for analysis. Last error:", modelError);
           continue;
         }
 
-        const data = await response.json();
+        const data = await modelResponse.json();
         const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!textContent) {

@@ -60,43 +60,62 @@ Return format (STRICT JSON - no markdown, no extra text):
 
 RESPOND WITH ONLY THE JSON OBJECT. NO EXPLANATIONS.`;
 
-    // Call Google Gemini API (using gemini-2.0-flash-exp which supports vision)
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
+    // Call Google Gemini API with fallback models
+    const models = ["gemini-3.6-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+    let response = null;
+    let lastError = null;
+
+    for (const modelName of models) {
+      try {
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
                 {
-                  text: systemPrompt,
-                },
-                {
-                  inline_data: {
-                    mime_type: imageMediaType,
-                    data: imageBase64,
-                  },
+                  parts: [
+                    {
+                      text: systemPrompt,
+                    },
+                    {
+                      inline_data: {
+                        mime_type: imageMediaType,
+                        data: imageBase64,
+                      },
+                    },
+                  ],
                 },
               ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            max_output_tokens: 1024,
-          },
-        }),
-      }
-    );
+              generationConfig: {
+                temperature: 0.7,
+                max_output_tokens: 1024,
+              },
+            }),
+          }
+        );
 
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("Gemini API error:", error);
+        if (response.ok) {
+          console.log(`Successfully using model: ${modelName}`);
+          break;
+        } else {
+          const error = await response.json();
+          lastError = error;
+          console.log(`Model ${modelName} failed, trying next...`, error.error?.message);
+        }
+      } catch (err) {
+        console.error(`Error trying model ${modelName}:`, err);
+        lastError = err;
+      }
+    }
+
+    if (!response?.ok) {
+      console.error("All Gemini models failed. Last error:", lastError);
       return NextResponse.json(
-        { error: "Failed to call Gemini API" },
+        { error: "Failed to call Gemini API. Please ensure your API key is valid and has vision capabilities enabled." },
         { status: 500 }
       );
     }
